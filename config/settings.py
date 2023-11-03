@@ -58,6 +58,7 @@ PROJECT_APPS = [
     'owner',
     'pet',
     'obesity',
+    'disease',
 ]
 
 THIRD_PARTY_APPS = [
