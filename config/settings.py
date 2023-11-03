@@ -57,6 +57,7 @@ DJANGO_APPS = [
 PROJECT_APPS = [
     'owner',
     'pet',
+    'obesity',
 ]
 
 THIRD_PARTY_APPS = [
