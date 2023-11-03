@@ -56,6 +56,7 @@ DJANGO_APPS = [
 
 PROJECT_APPS = [
     'owner',
+    'pet',
 ]
 
 THIRD_PARTY_APPS = [
