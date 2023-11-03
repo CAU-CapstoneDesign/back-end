@@ -14,5 +14,10 @@ class Obesity(BaseModel):
     )
 
     level = models.IntegerField(choices=LEVELS)
-    pet_id = models.ForeignKey(Pet, verbose_name='반려 동물', on_delete=models.CASCADE)
-    explanation = models.TextField(verbose_name='설명', blank=True)
+    explanation = models.TextField(verbose_name='비만도 설명')
+
+class ObesityHistory(BaseModel):
+    pet = models.ForeignKey(Pet, verbose_name='반려 동물', on_delete=models.CASCADE)
+    obesity = models.ForeignKey(Obesity, verbose_name='비만', on_delete=models.CASCADE)
+    diagnosis_date = models.DateField(verbose_name='진단 일자')
+    explanation = models.TextField(verbose_name='보호자 기록', blank=True)
