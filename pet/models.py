@@ -5,9 +5,11 @@ from owner.models import BaseModel, Owner
 
 class Pet(BaseModel):
     BREED = (
-        ('Retriever', '리트리버'),
+        ('Maltese', '말티즈'),
+        ('Poodle', '푸들'),
+        ('Bichon frise', '비숑 프리제'),
         ('Pomeranian', '포메라니안'),
-        ('Poodle', '푸들')
+        ('ETC', '기타')
     )
 
     GENDER = (
@@ -18,6 +20,6 @@ class Pet(BaseModel):
 
     id = models.AutoField(primary_key=True)
     owner_id = models.ForeignKey(Owner, verbose_name='보호자', on_delete=models.CASCADE)
-    breed = models.CharField(choices=BREED, max_length=20)
-    gender = models.CharField(choices=GENDER, max_length=20)
+    breed = models.CharField(choices=BREED, verbose_name='견종', max_length=20)
+    gender = models.CharField(choices=GENDER, verbose_name='성별', max_length=20)
     # photo = models.ImageField(upload_to='', blank=True, null=True)
