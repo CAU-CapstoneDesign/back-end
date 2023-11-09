@@ -24,6 +24,11 @@ class CreateDiseaseHistory(APIView):
             model_path = 'disease/data0922_resnet18_dogB_0.pt'
             predictions = inference(model_path, [image_path])
 
+            result = [['무증상'], ['구진/플라크'], ['비듬/각질/상피성잔고리'], ['태선화/과다색소침착'], ['농포/여드름'], ['미란/궤양'], ['결정/종괴']]
+            for i in range(7):
+                result[i].insert(1, predictions[0][i])
+            result.sort(key=lambda x: x[1],reverse=True)
+
             try:
                 pet = Pet.objects.get(pk=pet_id)
             except Pet.DoesNotExist:
@@ -33,7 +38,7 @@ class CreateDiseaseHistory(APIView):
             disease_history = DiseaseHistory(
                 pet = pet,
                 part = selected_part,
-                result = predictions,
+                result = result[0:3],
                 diagnosis_date = datetime.date.today()
             )
             disease_history.save()
