@@ -27,3 +27,4 @@ class DiseaseHistory(models.Model):
     # disease = models.ForeignKey(Disease, verbose_name='질병', on_delete=models.CASCADE)
     diagnosis_date = models.DateTimeField(verbose_name='진단 일자', auto_now=True)
     # explanation = models.TextField(verbose_name='보호자 기록', blank=True)
+    disease_image = models.ImageField(upload_to='disease/', blank=True, null=True, verbose_name='질병 사진')

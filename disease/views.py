@@ -10,6 +10,8 @@ from .serializers import DiseaseSerializer, DiseaseHistorySerializer
 from .inference import *
 from pet.models import Pet
 
+from django.core.files.storage import default_storage
+
 # Create your views here.
 
 class CreateDiseaseHistory(APIView):
@@ -18,7 +20,7 @@ class CreateDiseaseHistory(APIView):
         selected_part = request.data.get('part')
 
         if uploaded_image and selected_part:
-            image_path = self.save_image(uploaded_image)
+            image_path = default_storage.save('disease/' + uploaded_image.name, uploaded_image)
 
             # 모델을 통한 예측 수행
             model_path = 'disease/data0922_resnet18_dogB_0.pt'
@@ -39,7 +41,8 @@ class CreateDiseaseHistory(APIView):
                 pet = pet,
                 part = selected_part,
                 result = result[0:3],
-                diagnosis_date = datetime.date.today()
+                diagnosis_date = datetime.date.today(),
+                disease_image=image_path
             )
             disease_history.save()
 
@@ -49,6 +52,7 @@ class CreateDiseaseHistory(APIView):
         
         return JsonResponse({'error': 'POST request with an image and selected_part required'}, status=status.HTTP_400_BAD_REQUEST)
 
+    '''
     def save_image(self, uploaded_image):
         # 이미지 저장 후 저장 경로 반환
         image_path = 'disease/input_images/' + uploaded_image.name
@@ -56,3 +60,16 @@ class CreateDiseaseHistory(APIView):
             for chunk in uploaded_image.chunks():
                 destination.write(chunk)
         return image_path
+    '''
+
+class PetDiseaseHistoryList(APIView):
+    def get(self, request, pet_id):
+        try:
+            pet = Pet.objects.get(pk=pet_id)
+        except Pet.DoesNotExist:
+            return Response({'error': 'Pet not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        disease_histories = DiseaseHistory.objects.filter(pet=pet).order_by('-diagnosis_date')
+        serializer = DiseaseHistorySerializer(disease_histories, many=True)
+
+        return Response(serializer.data)

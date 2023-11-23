@@ -100,6 +100,10 @@ probabilities 2d list [  [probability of 1th picture]   [probability of 2th pict
 
 """
 
+import boto3
+import io
+from config.settings import get_secret
+
 
 def inference(model_path, image_paths):
 
@@ -118,6 +122,7 @@ def inference(model_path, image_paths):
     
     predictions = []
 
+    """
     with torch.no_grad():
         for image_path in image_paths:
             image = Image.open(image_path)
@@ -125,6 +130,33 @@ def inference(model_path, image_paths):
             logits = model(image)
             probabilities = F.softmax(logits, dim=1)
             #predicted_classes = torch.argmax(test_probabilities, dim=1).cpu().numpy()
+            predictions.extend(probabilities.tolist())
+    """
+    
+    aws_access_key_id = get_secret('AWS_ACCESS_KEY_ID')
+    aws_secret_access_key = get_secret('AWS_SECRET_ACCESS_KEY')
+    aws_region = get_secret('AWS_REGION')
+    
+    # boto3 클라이언트를 초기화합니다.
+    s3 = boto3.client(
+        's3',
+        region_name=aws_region,
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key
+    )
+
+    with torch.no_grad():
+        for image_path in image_paths:
+            # S3에서 이미지 다운로드
+            bucket_name = 'petcare-capstone'
+            image_key = image_path  # 이미지 경로를 적절하게 설정
+            response = s3.get_object(Bucket=bucket_name, Key=image_key)
+            image_bytes = response['Body'].read()
+            image = Image.open(io.BytesIO(image_bytes))
+            
+            image = transform(image).unsqueeze(0).to(device)
+            logits = model(image)
+            probabilities = F.softmax(logits, dim=1)
             predictions.extend(probabilities.tolist())
 
     return predictions
