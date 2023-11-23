@@ -1,5 +1,5 @@
 from django.db import models
-from owner.models import BaseModel, Owner
+from accounts.models import User, BaseModel
 
 # Create your models here.
 
@@ -19,7 +19,7 @@ class Pet(BaseModel):
     )
 
     id = models.AutoField(primary_key=True)
-    owner_id = models.ForeignKey(Owner, verbose_name='보호자', on_delete=models.CASCADE)
+    owner_id = models.ForeignKey(User, verbose_name='보호자', on_delete=models.CASCADE)
     name = models.CharField(verbose_name='이름', max_length=20, null=False)
     breed = models.CharField(choices=BREED, verbose_name='견종', max_length=20)
     gender = models.CharField(choices=GENDER, verbose_name='성별', max_length=20)

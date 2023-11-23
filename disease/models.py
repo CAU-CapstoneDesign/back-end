@@ -1,5 +1,5 @@
 from django.db import models
-from owner.models import BaseModel
+from accounts.models import BaseModel
 from pet.models import Pet
 
 # Create your models here.
