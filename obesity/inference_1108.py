@@ -18,26 +18,26 @@ import time
 
 Model Define
 
-input : batch x 3 x 64 x 64
-output : num_classes ( 7 )
+input : batch x 3 x seq x 64 x 64
+output : num_classes ( 3 )
 
 
 """
 
-class ResidualBlock(nn.Module):
+class ResidualBlock3D(nn.Module):
     def __init__(self, in_channels, out_channels, stride=1):
-        super(ResidualBlock, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(out_channels)
+        super(ResidualBlock3D, self).__init__()
+        self.conv1 = nn.Conv3d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm3d(out_channels)
         self.relu = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(out_channels)
+        self.conv2 = nn.Conv3d(out_channels, out_channels, kernel_size=3, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm3d(out_channels)
 
         self.shortcut = nn.Sequential()
         if stride != 1 or in_channels != out_channels:
             self.shortcut = nn.Sequential(
-                nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(out_channels)
+                nn.Conv3d(in_channels, out_channels, kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm3d(out_channels)
             )
 
     def forward(self, x):
@@ -47,26 +47,25 @@ class ResidualBlock(nn.Module):
         out = self.relu(out)
         return out
 
-
-class ResNet18(nn.Module):
+class ResNet3D(nn.Module):
     def __init__(self, num_classes=1):
-        super(ResNet18, self).__init__()
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
-        self.bn1 = nn.BatchNorm2d(64)
+        super(ResNet3D, self).__init__()
+        self.conv1 = nn.Conv3d(3, 64, kernel_size=7, stride=(1, 2, 2), padding=(3, 3, 3), bias=False)
+        self.bn1 = nn.BatchNorm3d(64)
         self.relu = nn.ReLU(inplace=True)
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.maxpool = nn.MaxPool3d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(64, 64, 2)
         self.layer2 = self._make_layer(64, 128, 2, stride=2)
         self.layer3 = self._make_layer(128, 256, 2, stride=2)
         self.layer4 = self._make_layer(256, 512, 2, stride=2)
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
         self.fc = nn.Linear(512, num_classes)
 
     def _make_layer(self, in_channels, out_channels, num_blocks, stride=1):
         layers = []
         strides = [stride] + [1] * (num_blocks - 1)
         for stride in strides:
-            layers.append(ResidualBlock(in_channels, out_channels, stride))
+            layers.append(ResidualBlock3D(in_channels, out_channels, stride))
             in_channels = out_channels
         return nn.Sequential(*layers)
 
@@ -90,10 +89,10 @@ you may use this method in your code.
 
 input
 model_path : path of model weight format ( .pt or .pth )
-image_paths : 1d list of image paths ( [ "./~~/~~/~~.jpg " ] )
+image_paths : 2d list of image paths ( [[ "A_01.jpg ","A_02.jpg ","A_03.jpg ","A_08.jpg "   ][ "B_01.jpg ","B_02.jpg ","B_03.jpg ","B_08.jpg "   ]] )
 
 output 
-probability[0] = [  probability of low ,  probability of normal , probability of over   ]
+predictions = [[ A probability of low , A probability of normal , A probability of over   ] , [ B probability of low ,  B probability of normal ,B  probability of over   ] ...] 
 
 
 
@@ -108,7 +107,7 @@ def inference(model_path, image_paths):
     #transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = ResNet18(num_classes=3).to(device)
+    model = ResNet3D(num_classes=3).to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
     
@@ -116,13 +115,17 @@ def inference(model_path, image_paths):
 
     with torch.no_grad():
         for image_path in image_paths:
-            image = Image.open(image_path)
-            image = transform(image).unsqueeze(0).to(device)
-            logits = model(image)
+            imagestack = []
+            for angle_image_path in image_path :
+
+                image = Image.open(angle_image_path)
+                image = transform(image).unsqueeze(0).to(device)
+                imagestack.append(image)
+            imagestack = torch.stack(imagestack, dim=2)
+            logits = model(imagestack)
             probabilities = F.softmax(logits, dim=1)
             #predicted_classes = torch.argmax(test_probabilities, dim=1).cpu().numpy()
             predictions.extend(probabilities.tolist())
-
     return predictions[0]
 
 
@@ -138,11 +141,10 @@ And output it as a percentage ( % )
 """
 
 if __name__ == "__main__": 
-    model_path = "./checkpoints/data1102POMAll_resnet18_BCS3_00.pt"
+    model_path = "./checkpoints/data1105POMBody1238_resnet183D_BCS3_2.pt"
     #test_path = "./data/data/test1102.csv" # for ai test. you can ignore this line
     #test_df = pd.read_csv(test_path) # for ai test.  you can ignore this line
-    #image_paths = test_df["path"].tolist() # for ai test.  you can ignore this line
-    image_paths = ["./data/data/test/image\A_10_BEA_CM_20230131_10_105163_09.jpg"]
+    image_paths = [["./data/data/image\A_10_POM_IF_20221109_10_102155_01.jpg","./data/data/image\A_10_POM_IF_20221109_10_102155_02.jpg","./data/data/image\A_10_POM_IF_20221109_10_102155_03.jpg","./data/data/image\A_10_POM_IF_20221109_10_102155_08.jpg"]]
     start_time = time.time()
     probability = inference(model_path, image_paths)
     for i in range(len(probability)):
