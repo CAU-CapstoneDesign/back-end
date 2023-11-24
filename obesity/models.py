@@ -31,3 +31,4 @@ class ObesityHistory(models.Model):
     result = models.JSONField(verbose_name='예측 결과', default=dict)
     diagnosis_date = models.DateTimeField(verbose_name='진단 일자', auto_now=True)
     # explanation = models.TextField(verbose_name='보호자 기록', blank=True)
+    obesity_images = models.JSONField(blank=True, null=True, verbose_name='비만도 사진')    

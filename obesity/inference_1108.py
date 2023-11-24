@@ -98,6 +98,9 @@ predictions = [[ A probability of low , A probability of normal , A probability 
 
 """
 
+import boto3
+import io
+from config.settings import get_secret
 
 def inference(model_path, image_paths):
 
@@ -108,24 +111,40 @@ def inference(model_path, image_paths):
 ])
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = ResNet3D(num_classes=3).to(device)
+    
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
     
     predictions = []
 
-    with torch.no_grad():
-        for image_path in image_paths:
-            imagestack = []
-            for angle_image_path in image_path :
+    aws_access_key_id = get_secret('AWS_ACCESS_KEY_ID')
+    aws_secret_access_key = get_secret('AWS_SECRET_ACCESS_KEY')
+    aws_region = get_secret('AWS_REGION')
+    
+    s3 = boto3.client(
+        's3',
+        region_name=aws_region,
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key
+    )
 
-                image = Image.open(angle_image_path)
-                image = transform(image).unsqueeze(0).to(device)
-                imagestack.append(image)
-            imagestack = torch.stack(imagestack, dim=2)
-            logits = model(imagestack)
-            probabilities = F.softmax(logits, dim=1)
-            #predicted_classes = torch.argmax(test_probabilities, dim=1).cpu().numpy()
-            predictions.extend(probabilities.tolist())
+    with torch.no_grad():
+        imagestack = []
+
+        for image_path in image_paths:
+            bucket_name = 'petcare-capstone'
+            response = s3.get_object(Bucket=bucket_name, Key=image_path)
+            image_bytes = response['Body'].read()
+            image = Image.open(io.BytesIO(image_bytes))
+            image = transform(image).unsqueeze(0).to(device)
+            imagestack.append(image)
+        
+        imagestack = torch.stack(imagestack, dim=2)
+        logits = model(imagestack)
+        probabilities = F.softmax(logits, dim=1)
+        #predicted_classes = torch.argmax(test_probabilities, dim=1).cpu().numpy()
+        predictions.extend(probabilities.tolist())
+
     return predictions[0]
 
 
