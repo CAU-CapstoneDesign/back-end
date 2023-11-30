@@ -102,6 +102,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    # 'django.contrib.staticfiles.middleware.StaticFilesMiddleware',
 ]
 
 CORS_ALLOW_CREDENTIALS = True
