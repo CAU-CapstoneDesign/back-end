@@ -23,3 +23,7 @@ urlpatterns = [
     path('obesity/', include('obesity.urls')),
     path('accounts/', include('accounts.urls'))
 ]
+
+from django.conf.urls.static import static
+from django.conf import settings
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -7,10 +7,11 @@ import datetime
 
 from .models import Obesity, ObesityHistory
 from .serializers import ObesitySerializer, ObesityHistorySerializer
-from .inference_1108 import *
+from .inference_1203 import *
 from pet.models import Pet
 
 from django.core.files.storage import default_storage
+import uuid
 
 # Create your views here.
 
@@ -18,6 +19,7 @@ class CreateObesityHistory(APIView):
     def post(self, request, pet_id):
         uploaded_images = request.FILES.getlist('image')
         selected_breed = request.data.get('breed')
+        age = request.data.get('age')
 
         if not uploaded_images:
             return JsonResponse({'error': 'Image files are required.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -25,13 +27,20 @@ class CreateObesityHistory(APIView):
         if not selected_breed:
             return JsonResponse({'error': 'Breed is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        image_paths = [default_storage.save('obesity/' + uploaded_image.name, uploaded_image)
-                       for uploaded_image in uploaded_images]
+        image_paths = []
+        for uploaded_image in uploaded_images:
+            extension = uploaded_image.name.split('.')[-1]
+            unique_filename = f"{uuid.uuid4()}.{extension}"
+            image_path = default_storage.save(f'obesity/{unique_filename}', uploaded_image)
+            image_url = default_storage.url(image_path)
+            image_paths.append(image_url)
 
         print(image_paths)
 
-        model_path = 'obesity/data1105POMBody1238_resnet183D_BCS3_2.pt'
-        predictions = inference(model_path, image_paths)
+        start_time = time.time()
+        # model_path = 'obesity/data1105POMBody1238_resnet183D_BCS3_2.pt'
+        model_path = 'obesity/data1128POMBody4513109Age_mobilenetv21xkinetics_BCS3.pt'
+        predictions = inference(model_path, image_paths, age)
             
         result = [max(predictions)]
         index = predictions.index(result[0])
@@ -41,6 +50,10 @@ class CreateObesityHistory(APIView):
             result.append('normal weight')
         elif index == 2:
             result.append('over weight')
+
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        print(f"elapsed time: {elapsed_time:.4f} sec")
 
         try:
             pet = Pet.objects.get(pk=pet_id)
@@ -53,6 +66,7 @@ class CreateObesityHistory(APIView):
         obesity_history = ObesityHistory(
             pet = pet,
             breed = selected_breed,
+            age = age,
             result = result,
             diagnosis_date = datetime.date.today(),
             obesity_images=image_paths

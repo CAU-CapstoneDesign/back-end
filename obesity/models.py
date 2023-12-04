@@ -27,8 +27,9 @@ class ObesityHistory(models.Model):
 
     pet = models.ForeignKey(Pet, verbose_name='반려 동물', on_delete=models.CASCADE)
     breed = models.CharField(choices=BREED, verbose_name='견종', max_length=15, null=False)
+    age = models.IntegerField(verbose_name='나이', null=False)
     # obesity = models.ForeignKey(Obesity, verbose_name='비만', on_delete=models.CASCADE)
-    result = models.JSONField(verbose_name='예측 결과', default=dict)
+    result = models.JSONField(verbose_name='예측 결과', null=True)
     diagnosis_date = models.DateTimeField(verbose_name='진단 일자', auto_now=True)
     # explanation = models.TextField(verbose_name='보호자 기록', blank=True)
     obesity_images = models.JSONField(blank=True, null=True, verbose_name='비만도 사진')    
