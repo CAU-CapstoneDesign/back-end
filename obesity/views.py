@@ -59,9 +59,6 @@ class CreateObesityHistory(APIView):
             pet = Pet.objects.get(pk=pet_id)
         except Pet.DoesNotExist:
             return Response({'error': 'Pet not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        image_paths = [default_storage.url(default_storage.save('obesity/' + uploaded_image.name, uploaded_image))
-              for uploaded_image in uploaded_images]
         
         obesity_history = ObesityHistory(
             pet = pet,
