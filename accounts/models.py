@@ -49,9 +49,9 @@ class User(AbstractBaseUser):
     objects = UserManager()
 
     # 사용자의 username field는 nickname으로 설정
-    USERNAME_FIELD = 'nickname'
+    USERNAME_FIELD = 'email'
     # 필수로 작성해야하는 field
-    REQUIRED_FIELDS = ['email', 'name']
+    REQUIRED_FIELDS = ['nickname', 'name']
 
     def has_perm(self, perm, obj=None):
         return self.is_superuser
