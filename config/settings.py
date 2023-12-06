@@ -87,6 +87,10 @@ INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
 # 사이트는 1개만 사용할 것이라고 명시
 SITE_ID = 1
 
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
 AUTH_USER_MODEL = 'accounts.User'
 
 # 나중에 dj_rest_auth.registration.views.SocialLoginView을 쓰기 위해 추가
