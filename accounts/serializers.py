@@ -7,9 +7,10 @@ class UserSerializer(serializers.ModelSerializer):
             email = validated_data['email'],
             nickname = validated_data['nickname'],
             name = validated_data['name'],
-            password = validated_data['password']
+            password = validated_data['password'],
+            phone_number = validated_data['phone_number']
         )
         return user
     class Meta:
         model = User
-        fields = ['nickname', 'email', 'name', 'password']
+        fields = ['nickname', 'email', 'name', 'password', 'phone_number']
