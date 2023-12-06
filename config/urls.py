@@ -21,7 +21,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('disease/', include('disease.urls')),
     path('obesity/', include('obesity.urls')),
-    path('accounts/', include('accounts.urls'))
+    path('accounts/', include('accounts.urls')),
+    path('pet/', include('pet.urls'))
 ]
 
 from django.conf.urls.static import static
