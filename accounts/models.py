@@ -3,7 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
 class UserManager(BaseUserManager):
     # 일반 user 생성
-    def create_user(self, email, nickname, name, phone_number, password=None):
+    def create_user(self, email, nickname, name, phone_number=None, password=None):
         if not email:
             raise ValueError('must have user email')
         if not nickname:
@@ -21,15 +21,16 @@ class UserManager(BaseUserManager):
         return user
 
     # 관리자 user 생성
-    def create_superuser(self, email, nickname, name, password=None):
+    def create_superuser(self, email, nickname, name, password=None, phone_number=None):
         user = self.create_user(
-            email,
-            password = password,
-            nickname = nickname,
-            name = name
+            email=email,
+            nickname=nickname,
+            name=name,
+            password=password,
+            phone_number=phone_number
         )
-        user.is_superuser = True  # Ensure this is set to True
-        user.is_staff = True         
+        user.is_superuser = True
+        user.is_staff = True
         user.is_admin = True
         user.save(using=self._db)
         return user
@@ -39,7 +40,7 @@ class User(AbstractBaseUser):
     email = models.EmailField(default='', max_length=100, null=False, blank=False, unique=True)
     nickname = models.CharField(default='', max_length=100, null=False, blank=False, unique=True)
     name = models.CharField(default='', max_length=100, null=False, blank=False)
-    phone_number = models.CharField(default='', max_length=11)
+    phone_number = models.CharField(default='', max_length=11, null=True, blank=False)
 
     # User 모델의 필수 field
     # is_active = models.BooleanField(default=True)    
