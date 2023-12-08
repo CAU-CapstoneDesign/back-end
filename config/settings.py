@@ -208,3 +208,6 @@ AWS_S3_OBJECT_PARAMETERS = {
 
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+MEDIA_URL = '/input_images/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'input_images')

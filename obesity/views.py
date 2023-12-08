@@ -9,17 +9,24 @@ from .models import Obesity, ObesityHistory
 from .serializers import ObesitySerializer, ObesityHistorySerializer
 from .inference_1203 import *
 from pet.models import Pet
-
-from django.core.files.storage import default_storage
+import os
+import boto3
+from PIL import Image
+from config.settings import get_secret
+from django.conf import settings
+from botocore.exceptions import NoCredentialsError
 import uuid
-
-# Create your views here.
 
 class CreateObesityHistory(APIView):
     def post(self, request, pet_id):
         uploaded_images = request.FILES.getlist('image')
         selected_breed = request.data.get('breed')
         age = request.data.get('age')
+
+        try:
+            pet = Pet.objects.get(pk=pet_id)
+        except Pet.DoesNotExist:
+            return Response({'error': 'Pet not found'}, status=status.HTTP_404_NOT_FOUND)
 
         if not uploaded_images:
             return JsonResponse({'error': 'Image files are required.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -29,18 +36,14 @@ class CreateObesityHistory(APIView):
 
         image_paths = []
         for uploaded_image in uploaded_images:
-            extension = uploaded_image.name.split('.')[-1]
-            unique_filename = f"{uuid.uuid4()}.{extension}"
-            image_path = default_storage.save(f'obesity/{unique_filename}', uploaded_image)
-            image_url = default_storage.url(image_path)
-            image_paths.append(image_url)
+            image_path = self.save_image(uploaded_image)
+            image_paths.append(image_path)
 
-        print(image_paths)
+        print([image_paths])
 
         start_time = time.time()
-        # model_path = 'obesity/data1105POMBody1238_resnet183D_BCS3_2.pt'
-        model_path = 'obesity/data1128POMBody4513109Age_mobilenetv21xkinetics_BCS3.pt'
-        predictions = inference(model_path, image_paths, age)
+        model_path = 'obesity/data1205POMBody4513109Age_mobilenetv21xkinetics_BCS3_19.pt'
+        predictions = inference(model_path, [image_paths], int(age))
             
         result = [max(predictions)]
         index = predictions.index(result[0])
@@ -54,11 +57,6 @@ class CreateObesityHistory(APIView):
         end_time = time.time()
         elapsed_time = end_time - start_time
         print(f"elapsed time: {elapsed_time:.4f} sec")
-
-        try:
-            pet = Pet.objects.get(pk=pet_id)
-        except Pet.DoesNotExist:
-            return Response({'error': 'Pet not found'}, status=status.HTTP_404_NOT_FOUND)
         
         obesity_history = ObesityHistory(
             pet = pet,
@@ -66,27 +64,55 @@ class CreateObesityHistory(APIView):
             age = age,
             result = result,
             diagnosis_date = datetime.date.today(),
-            obesity_images=image_paths
+            obesity_images=[]
         )
+        obesity_history.save()
+
+        # AWS S3
+        aws_access_key_id = get_secret('AWS_ACCESS_KEY_ID')
+        aws_secret_access_key = get_secret('AWS_SECRET_ACCESS_KEY')
+        aws_region = get_secret('AWS_REGION')
+        
+        s3 = boto3.client(
+            's3',
+            region_name=aws_region,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key
+        )
+        bucket_name = 'petcare-capstone' 
+
+        s3_image_paths = []
+        for temp_image_path in image_paths:
+            unique_id = uuid.uuid4()  # Generate a unique UUID
+            s3_file_key = f"{unique_id}/{os.path.basename(temp_image_path)}"  # Prepend the UUID to the filename
+
+            try:
+                with open(temp_image_path, 'rb') as data:
+                    s3.upload_fileobj(data, bucket_name, s3_file_key)
+                s3_image_url = f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/{s3_file_key}"
+                s3_image_paths.append(s3_image_url)
+                # 업로드 후 로컬 파일 삭제
+                os.remove(temp_image_path)
+            except NoCredentialsError:
+                print("Credentials not available")
+                continue
+        
+        print(s3_image_paths)
+
+        obesity_history.obesity_images = s3_image_paths
         obesity_history.save()
 
         serializer = ObesityHistorySerializer(obesity_history)
         return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
     
-    '''
-    def save_image(self, uploaded_images):
-        # 이미지 저장 후 저장 경로 반환
-        image_paths = []
-        for uploaded_image in uploaded_images:
-            image_path = 'obesity/input_images/' + uploaded_image.name
-            
-            with open(image_path, 'wb') as destination:
-                for chunk in uploaded_image.chunks():
-                    destination.write(chunk)
-            image_paths.append(image_path)
-        
-        return image_paths    
-    '''
+    def save_image(self, uploaded_image):
+        # 이미지 저장 후 상대 경로 반환
+        image_name = uploaded_image.name
+        image_path = os.path.join('input_images', image_name)
+        with open(image_path, 'wb') as destination:
+            for chunk in uploaded_image.chunks():
+                destination.write(chunk)
+        return image_path
 
 class ObesityHistoryList(APIView):
     def get(self, request, pet_id):

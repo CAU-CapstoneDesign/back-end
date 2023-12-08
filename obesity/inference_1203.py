@@ -13,11 +13,6 @@ import pandas as pd
 import torch.nn as nn
 import time
 from .model_1203 import *
-import boto3
-import io
-from PIL import Image
-from config.settings import get_secret
-from botocore.exceptions import ClientError
 
 """
 
@@ -37,7 +32,7 @@ predictions = [[ A probability of low , A probability of normal , A probability 
 """
 
 
-def inference(model_path, image_paths, age):
+def inference(model_path, image_paths,age):
 
     transform = transforms.Compose([
     transforms.Resize((64, 64)),
@@ -50,41 +45,25 @@ def inference(model_path, image_paths, age):
     model.eval()
     
     predictions = []
-
-    aws_access_key_id = get_secret('AWS_ACCESS_KEY_ID')
-    aws_secret_access_key = get_secret('AWS_SECRET_ACCESS_KEY')
-    aws_region = get_secret('AWS_REGION')
     
-    s3 = boto3.client(
-        's3',
-        region_name=aws_region,
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key
-    )
-    bucket_name = 'petcare-capstone' 
-
     with torch.no_grad():
-        imagestack = []
-
         for image_path in image_paths:
-            bucket_name = 'petcare-capstone'
-            key = '/'.join(image_path.split('/')[-2:])  # S3 객체 키 추출
-            print(key)
-            response = s3.get_object(Bucket=bucket_name, Key=key)
-            image_bytes = response['Body'].read() 
-            image = Image.open(io.BytesIO(image_bytes))
-            image = transform(image).unsqueeze(0).to(device)
-            imagestack.append(image)
-            
-            imagestack_tor = torch.stack(imagestack, dim=2)
-            age = float(age)
-            age_tensor = torch.tensor([age], dtype=torch.float32).to(device).unsqueeze(0)
+            imagestack = []
+            print(image_path)
+            for angle_image_path in image_path :
 
-            logits = model(imagestack_tor, age_tensor)
+                print(angle_image_path)
+
+                image = Image.open(angle_image_path)
+                image = transform(image).unsqueeze(0).to(device)
+                imagestack.append(image)
+            imagestack = torch.stack(imagestack, dim=2)
+            age = torch.tensor(age, dtype=torch.float32).to(device).unsqueeze(0)
+
+            logits = model(imagestack,age)
             probabilities = F.softmax(logits, dim=1)
             predictions.extend(probabilities.tolist())
-
-        return predictions[0]
+    return predictions[0]
 
 """
 
@@ -96,13 +75,14 @@ And output it as a percentage ( % )
 """
 
 if __name__ == "__main__": 
-    model_path = "./checkpoints/data1128POMBody4513109Age_mobilenetv21xkinetics_BCS3.pt"
-    object_id = "A_10_POM_IM_20221111_10_000853"
+    model_path = "./checkpoints/data1205POMBody4513109Age_mobilenetv21xkinetics_BCS3_19.pt"
+    object_id = "over2"
+    where = "inference"
+    age =9
 
 
+    image_paths = [[f"./data/data/{where}/{object_id}_04.jpg",f"./data/data/{where}/{object_id}_05.jpg",f"./data/data/{where}/{object_id}_13.jpg",f"./data/data/{where}/{object_id}_10.jpg",f"./data/data/{where}/{object_id}_09.jpg"]]
 
-    image_paths = [[f"./data/data/image\{object_id}_04.jpg",f"./data/data/image\{object_id}_05.jpg",f"./data/data/image\{object_id}_13.jpg",f"./data/data/image\{object_id}_10.jpg",f"./data/data/image\{object_id}_09.jpg"]]
-    age = 10
     
     start_time = time.time()
     probability = inference(model_path, image_paths, age)

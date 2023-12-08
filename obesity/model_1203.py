@@ -106,19 +106,17 @@ class MobileNetV2(nn.Module):
             nn.Dropout(0.2),
             nn.Linear(self.last_channel, num_classes),
         )
-        #self.age_fc = nn.Linear(1, 512)  # 'age'를 512 크기의 벡터로 변환
+        self.age_fc = nn.Linear(1, 1280) 
         self._initialize_weights()
 
     def forward(self, x,age):
         x = self.features(x)
         x = F.avg_pool3d(x, x.data.size()[-3:])
         x = x.view(x.size(0), -1)
+        age_features = self.age_fc(age.view(-1, 1))
+        x += age_features
         x = self.classifier(x)
         x = torch.flatten(x, 1)
-
-        #age_features = self.age_fc(age.view(-1, 1))
-        #x += age_features
-        #x = self.fc(x)
         return x
 
     def _initialize_weights(self):

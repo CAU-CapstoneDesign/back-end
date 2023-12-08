@@ -177,3 +177,5 @@ cython_debug/
 *.pt
 
 secrets.json
+
+test/
