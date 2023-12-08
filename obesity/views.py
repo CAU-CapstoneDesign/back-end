@@ -8,6 +8,7 @@ import datetime
 from .models import Obesity, ObesityHistory
 from .serializers import ObesitySerializer, ObesityHistorySerializer
 from .inference_1203 import *
+from .inference_1207 import *
 from pet.models import Pet
 import os
 import boto3
@@ -42,9 +43,15 @@ class CreateObesityHistory(APIView):
         print([image_paths])
 
         start_time = time.time()
-        model_path = 'obesity/data1205POMBody4513109Age_mobilenetv21xkinetics_BCS3_19.pt'
-        predictions = inference(model_path, [image_paths], int(age))
-            
+
+        model_path_obesity = 'obesity/data1205POMBody4513109Age_mobilenetv21xkinetics_BCS3_19.pt'
+        predictions = inference_obesity(model_path_obesity, [image_paths], int(age))
+
+        model_path_bcs = 'obesity/data1205POMBody4513109Age_mobilenetv21xkinetics_BCS_weightedMSELoss_19.pt'
+        bcs = inference_bcs(model_path_bcs, [image_paths], int(age))
+
+        print(predictions)
+
         result = [max(predictions)]
         index = predictions.index(result[0])
         if index == 0:
@@ -62,7 +69,8 @@ class CreateObesityHistory(APIView):
             pet = pet,
             breed = selected_breed,
             age = age,
-            result = result,
+            obesity_result = result,
+            bcs_result = bcs,
             diagnosis_date = datetime.date.today(),
             obesity_images=[]
         )
@@ -84,7 +92,7 @@ class CreateObesityHistory(APIView):
         s3_image_paths = []
         for temp_image_path in image_paths:
             unique_id = uuid.uuid4()  # Generate a unique UUID
-            s3_file_key = f"{unique_id}/{os.path.basename(temp_image_path)}"  # Prepend the UUID to the filename
+            s3_file_key = f"obesity/{unique_id}.{os.path.basename(temp_image_path)}"  # Prepend the UUID to the filename
 
             try:
                 with open(temp_image_path, 'rb') as data:

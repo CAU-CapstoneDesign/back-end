@@ -12,7 +12,7 @@ from PIL import Image
 import pandas as pd
 import torch.nn as nn
 import time
-from .model_1203 import *
+from .model_1207 import *
 
 """
 
@@ -32,7 +32,7 @@ predictions = [[ A probability of low , A probability of normal , A probability 
 """
 
 
-def inference_obesity(model_path, image_paths,age):
+def inference_bcs(model_path, image_paths,age):
 
     transform = transforms.Compose([
     transforms.Resize((64, 64)),
@@ -49,10 +49,7 @@ def inference_obesity(model_path, image_paths,age):
     with torch.no_grad():
         for image_path in image_paths:
             imagestack = []
-            print(image_path)
             for angle_image_path in image_path :
-
-                print(angle_image_path)
 
                 image = Image.open(angle_image_path)
                 image = transform(image).unsqueeze(0).to(device)
@@ -61,8 +58,7 @@ def inference_obesity(model_path, image_paths,age):
             age = torch.tensor(age, dtype=torch.float32).to(device).unsqueeze(0)
 
             logits = model(imagestack,age)
-            probabilities = F.softmax(logits, dim=1)
-            predictions.extend(probabilities.tolist())
+            predictions.extend(logits.tolist()[0])
     return predictions[0]
 
 """
@@ -75,27 +71,18 @@ And output it as a percentage ( % )
 """
 
 if __name__ == "__main__": 
-    model_path = "./checkpoints/data1205POMBody4513109Age_mobilenetv21xkinetics_BCS3_19.pt"
-    object_id = "over2"
+    model_path = "./checkpoints/data1205POMBody4513109Age_mobilenetv21xkinetics_BCS_19.pt"
+    object_id = "normal1"
     where = "inference"
-    age =9
+    age = 5
 
 
     image_paths = [[f"./data/data/{where}/{object_id}_04.jpg",f"./data/data/{where}/{object_id}_05.jpg",f"./data/data/{where}/{object_id}_13.jpg",f"./data/data/{where}/{object_id}_10.jpg",f"./data/data/{where}/{object_id}_09.jpg"]]
 
     
     start_time = time.time()
-    probability = inference(model_path, image_paths, age)
-    for i in range(len(probability)):
-        if i == 0 :
-            weight = "under weight"
-        elif i == 1 :
-            weight = "normal weight"
-        else :
-            weight = "over weight"
-        
-        print(f"{weight} probability : {100 * probability[i] : .4f} % ")
-
+    bcs = inference(model_path, image_paths, age)
+    print("BCS : ",bcs)
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"elapsed time: {elapsed_time:.4f} sec")
