@@ -36,10 +36,10 @@ def get_secret(setting, secrets=secrets):
         raise ImproperlyConfigured(error_msg)
 
 SECRET_KEY = get_secret("SECRET_KEY")
-DEBUG = get_secret('DEBUG')
-STATE = get_secret('STATE')
-SOCIAL_AUTH_GOOGLE_CLIENT_ID = get_secret('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
-SOCIAL_AUTH_GOOGLE_SECRET = get_secret('SOCIAL_AUTH_GOOGLE_SECRET')
+# DEBUG = get_secret('DEBUG')
+# STATE = get_secret('STATE')
+# SOCIAL_AUTH_GOOGLE_CLIENT_ID = get_secret('SOCIAL_AUTH_GOOGLE_CLIENT_ID')
+# SOCIAL_AUTH_GOOGLE_SECRET = get_secret('SOCIAL_AUTH_GOOGLE_SECRET')
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -182,8 +182,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, '_static')
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -197,10 +198,10 @@ AWS_SECRET_ACCESS_KEY = get_secret('AWS_SECRET_ACCESS_KEY')
 AWS_REGION = get_secret('AWS_REGION')
 
 # AWS S3 버킷 이름
-AWS_STORAGE_BUCKET_NAME = 'petcare-capstone'
+AWS_STORAGE_BUCKET_NAME = 'capstone-petdoctor'
 
 # AWS S3 버킷의 URL
-AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (AWS_STORAGE_BUCKET_NAME,AWS_REGION)
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (AWS_STORAGE_BUCKET_NAME, AWS_REGION)
 
 AWS_S3_OBJECT_PARAMETERS = {
     'CacheControl': 'max-age=86400',
@@ -208,6 +209,9 @@ AWS_S3_OBJECT_PARAMETERS = {
 
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+# STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+# DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 MEDIA_URL = '/input_images/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'input_images')

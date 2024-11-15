@@ -87,7 +87,7 @@ class CreateObesityHistory(APIView):
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key
         )
-        bucket_name = 'petcare-capstone' 
+        bucket_name = 'capstone-petdoctor' 
 
         s3_image_paths = []
         for temp_image_path in image_paths:
