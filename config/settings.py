@@ -198,7 +198,7 @@ AWS_SECRET_ACCESS_KEY = get_secret('AWS_SECRET_ACCESS_KEY')
 AWS_REGION = get_secret('AWS_REGION')
 
 # AWS S3 버킷 이름
-AWS_STORAGE_BUCKET_NAME = 'capstone-petdoctor'
+AWS_STORAGE_BUCKET_NAME = 'cau-petdoctor'
 
 # AWS S3 버킷의 URL
 AWS_S3_CUSTOM_DOMAIN = '%s.s3.%s.amazonaws.com' % (AWS_STORAGE_BUCKET_NAME, AWS_REGION)

@@ -135,7 +135,7 @@ def inference(model_path, image_paths):
     with torch.no_grad():
         for image_path in image_paths:
             # S3에서 이미지 다운로드
-            bucket_name = 'capstone-petdoctor'
+            bucket_name = 'cau-petdoctor'
             response = s3.get_object(Bucket=bucket_name, Key=image_path)
             image_bytes = response['Body'].read()
             image = Image.open(io.BytesIO(image_bytes))

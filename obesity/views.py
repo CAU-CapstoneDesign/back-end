@@ -87,12 +87,12 @@ class CreateObesityHistory(APIView):
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key
         )
-        bucket_name = 'capstone-petdoctor' 
+        bucket_name = 'cau-petdoctor' 
 
         s3_image_paths = []
         for temp_image_path in image_paths:
-            unique_id = uuid.uuid4()  # Generate a unique UUID
-            s3_file_key = f"obesity/{unique_id}.{os.path.basename(temp_image_path)}"  # Prepend the UUID to the filename
+            unique_id = uuid.uuid4()
+            s3_file_key = f"obesity/{unique_id}.{os.path.basename(temp_image_path)}"
 
             try:
                 with open(temp_image_path, 'rb') as data:
